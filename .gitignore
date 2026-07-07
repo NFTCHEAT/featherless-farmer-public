@@ -1,0 +1,12 @@
+keys.txt
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+.playwright/
+.DS_Store
+Thumbs.db
+debug_keys_page.html
+debug_keys_page.png
