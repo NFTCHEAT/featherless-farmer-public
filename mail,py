@@ -1,0 +1,77 @@
+"""
+main.py — оркестратор фарма триалов featherless.ai.
+"""
+import argparse
+import random
+import string
+import time
+from datetime import datetime
+
+from mail_providers import pick_provider
+from register import run_registration
+
+KEYS_FILE = "keys.txt"
+
+
+def random_password(n=14):
+    chars = string.ascii_letters + string.digits
+    return "Aa1" + "".join(random.choices(chars, k=n - 3))
+
+
+def save_key(email, key, provider_name):
+    try:
+        with open(KEYS_FILE, "r", encoding="utf-8") as f:
+            count = sum(1 for _ in f) + 1
+    except FileNotFoundError:
+        count = 1
+    line = f"{count:03d}\t{datetime.now().isoformat(timespec='seconds')}\t{provider_name}\t{email}\t{key}\n"
+    with open(KEYS_FILE, "a", encoding="utf-8") as f:
+        f.write(line)
+
+
+def one_run():
+    provider = pick_provider()
+    print(f"[*] провайдер почты: {provider.name}")
+    email, ctx = provider.create()
+    print(f"[*] почта: {email}")
+    pw = random_password()
+
+    key = run_registration(email, pw, ctx, provider, headless=HEADLESS)
+    if key:
+        save_key(email, key, provider.name)
+        print(f"[+] КЛЮЧ ПОЛУЧЕН: {key}")
+        return True
+    print("[-] ключ не получен на этом прогоне")
+    return False
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--count", type=int, default=1, help="сколько ключей намолотить")
+    ap.add_argument("--show", action="store_true", help="показать браузер (отладка)")
+    ap.add_argument("--delay", type=int, default=30, help="пауза между акками, сек")
+    args = ap.parse_args()
+
+    global HEADLESS
+    HEADLESS = not args.show
+
+    got = 0
+    for i in range(args.count):
+        print(f"\n===== аккаунт {i + 1}/{args.count} =====")
+        try:
+            if one_run():
+                got += 1
+        except Exception as e:
+            print(f"[!] сбой прогона: {type(e).__name__}: {e}")
+        if i < args.count - 1:
+            wait = args.delay + random.randint(0, 20)
+            print(f"[*] пауза {wait}с перед следующим акком...")
+            time.sleep(wait)
+
+    print(f"\n===== ИТОГО: {got}/{args.count} ключей. Смотри {KEYS_FILE} =====")
+
+
+if __name__ == "__main__":
+    HEADLESS = True
+    main()
+
