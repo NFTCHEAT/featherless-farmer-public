@@ -1,0 +1,6 @@
+requests>=2.31
+playwright>=1.40
+pyTelegramBotAPI>=4.0
+curl-cffi>=0.15
+temp-gmail>=1.0
+python-dotenv>=1.0
